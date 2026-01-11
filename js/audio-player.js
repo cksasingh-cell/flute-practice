@@ -177,12 +177,16 @@ const AudioPlayer = (function() {
         try {
             dispatchEvent('trackloading', { file: currentFile });
             
-            // Get audio URL from Google Drive
-            const audioUrl = GDrive.getFileUrl(currentFile.id);
-            console.log('Loading audio from:', audioUrl);
+            // Download file as blob from Google Drive
+            console.log('Downloading audio file:', currentFile.name);
+            const blob = await GDrive.downloadFile(currentFile.id);
+            
+            // Create blob URL with proper MIME type
+            const blobUrl = URL.createObjectURL(new Blob([blob], { type: currentFile.mimeType || 'audio/mpeg' }));
+            console.log('Playing from blob URL, MIME type:', currentFile.mimeType);
             
             // Load and play
-            audioElement.src = audioUrl;
+            audioElement.src = blobUrl;
             
             // Wait a moment for the source to load before playing
             await new Promise(resolve => setTimeout(resolve, 100));
