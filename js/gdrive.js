@@ -17,24 +17,9 @@ const GDrive = (function() {
     let gisInited = false;
     
     /**
-     * Wait for global objects to be available
-     */
-    function waitForGlobals() {
-        return new Promise((resolve) => {
-            const checkGlobals = setInterval(() => {
-                if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
-                    clearInterval(checkGlobals);
-                    resolve();
-                }
-            }, 100);
-        });
-    }
-    
-    /**
      * Initialize Google API client
      */
-    async function initGapi() {
-        await waitForGlobals();
+    function initGapi() {
         return new Promise((resolve, reject) => {
             gapi.load('client', async () => {
                 try {
@@ -56,8 +41,7 @@ const GDrive = (function() {
     /**
      * Initialize Google Identity Services
      */
-    async function initGis() {
-        await waitForGlobals();
+    function initGis() {
         return new Promise((resolve) => {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: window.APP_CONFIG.CLIENT_ID,
@@ -271,18 +255,29 @@ const GDrive = (function() {
      * Download file content as blob (for audio playback)
      */
     async function downloadFile(fileId) {
-        const url = getFileUrl(fileId);
-        
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Download failed: ${response.statusText}`);
-            }
-            return await response.blob();
-        } catch (error) {
-            console.error('Error downloading file:', error);
-            throw error;
-        }
+        return new Promise((resolve, reject) => {
+            const token = gapi.client.getToken().access_token;
+            const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            xhr.responseType = 'blob';
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    resolve(xhr.response);
+                } else {
+                    reject(new Error(`Download failed: ${xhr.statusText}`));
+                }
+            };
+            
+            xhr.onerror = function() {
+                reject(new Error('Network error downloading file'));
+            };
+            
+            xhr.send();
+        });
     }
     
     // Public API
