@@ -12,6 +12,8 @@ const AudioPlayer = (function() {
     let currentIndex = -1;
     let isPlaying = false;
     let currentFile = null;
+    let consecutiveErrors = 0;
+    const MAX_CONSECUTIVE_ERRORS = 3;
     
     /**
      * Fisher-Yates shuffle algorithm
@@ -101,9 +103,6 @@ const AudioPlayer = (function() {
         }
         
         dispatchEvent('error', { message: errorMessage });
-        
-        // Try to play next track after error
-        setTimeout(() => playNext(), 1000);
     }
     
     /**
@@ -154,6 +153,14 @@ const AudioPlayer = (function() {
             return;
         }
         
+        // Check if too many consecutive errors
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+            stop();
+            dispatchEvent('error', { message: 'Too many playback errors. Please check your files and connection.' });
+            consecutiveErrors = 0;
+            return;
+        }
+        
         // Move to next track
         currentIndex++;
         
@@ -172,20 +179,29 @@ const AudioPlayer = (function() {
             
             // Get audio URL from Google Drive
             const audioUrl = GDrive.getFileUrl(currentFile.id);
+            console.log('Loading audio from:', audioUrl);
             
             // Load and play
             audioElement.src = audioUrl;
+            
+            // Wait a moment for the source to load before playing
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             await audioElement.play();
             isPlaying = true;
+            consecutiveErrors = 0; // Reset error counter on success
             
             dispatchEvent('trackstart', { file: currentFile });
             
         } catch (error) {
             console.error('Error playing track:', error);
-            dispatchEvent('error', { message: 'Could not play track: ' + currentFile.name });
+            consecutiveErrors++;
+            dispatchEvent('error', { message: `Could not play track: ${currentFile.name}` });
             
-            // Try next track
-            setTimeout(() => playNext(), 1000);
+            // Only try next track if haven't hit max errors
+            if (consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
+                setTimeout(() => playNext(), 2000);
+            }
         }
     }
     
