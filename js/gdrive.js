@@ -17,9 +17,24 @@ const GDrive = (function() {
     let gisInited = false;
     
     /**
+     * Wait for global objects to be available
+     */
+    function waitForGlobals() {
+        return new Promise((resolve) => {
+            const checkGlobals = setInterval(() => {
+                if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
+                    clearInterval(checkGlobals);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+    
+    /**
      * Initialize Google API client
      */
-    function initGapi() {
+    async function initGapi() {
+        await waitForGlobals();
         return new Promise((resolve, reject) => {
             gapi.load('client', async () => {
                 try {
@@ -41,7 +56,8 @@ const GDrive = (function() {
     /**
      * Initialize Google Identity Services
      */
-    function initGis() {
+    async function initGis() {
+        await waitForGlobals();
         return new Promise((resolve) => {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: window.APP_CONFIG.CLIENT_ID,
