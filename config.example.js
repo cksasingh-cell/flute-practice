@@ -6,13 +6,8 @@
  */
 
 window.APP_CONFIG = {
-    // Get these from Google Cloud Console
-    // See README.md for detailed setup instructions
-    
-    CLIENT_ID: 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com',
-    API_KEY: 'YOUR_API_KEY_HERE',
-    
-    // Optional: Customize the folder name
+    CLIENT_ID: '744375413516-216ck8kv3r786p4s0fre7ujkfrnm6ji8.apps.googleusercontent.com',
+    API_KEY: 'AIzaSyAiFYIbHSCLBVV6wJv5jT0T2a9FGmF_tMY',
     FOLDER_NAME: 'Flute Practice Surs'
 };
 
